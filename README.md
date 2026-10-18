@@ -20,22 +20,54 @@ tells you what to do about it.
   of CPU, GPU, memory, disks and temperatures (NVMe health included), on a local dashboard
   you can open remotely from mobile devices through Tailscale. Plus a REST API.
 
-Windows and Linux (headless). One file, no admin needed to run; a few sensors (CPU
-temperature) need it and say so. Investigations use Claude Code if it is installed.
+Windows and Linux (headless). Investigations use Claude Code if it is installed.
+
+## Install on Windows
+
+Download [machinehealth-setup.exe](https://github.com/jeffposey/machinehealth-releases/releases/latest/download/machinehealth-setup.exe)
+and run it. It is unsigned for now, so SmartScreen warns on the first run: More info, then
+Run anyway. It asks for admin once, installs into `%LOCALAPPDATA%\Programs\MachineHealth`,
+registers a sign-in task that starts it elevated, and starts it. It offers to install
+PawnIO, the driver that lets it read CPU temperature. Run a newer setup to upgrade in place;
+your data in `%USERPROFILE%\.machinehealth` is kept. Uninstall from Settings > Apps.
+
+## Install on Linux
+
+Headless: a systemd user unit, with the dashboard, the API and Web Push as the whole
+interface. No sudo.
+
+```sh
+curl -LO https://github.com/jeffposey/machinehealth-releases/releases/latest/download/machinehealth-linux-x86_64
+curl -LO https://github.com/jeffposey/machinehealth-releases/releases/latest/download/install-linux.sh
+sh install-linux.sh
+```
+
+The script installs the binary beside it to `~/.local/bin/machinehealth`, writes
+`~/.config/systemd/user/machinehealth.service`, and enables and starts it. The dashboard is
+on `http://localhost:8890/app/`. It prints, and never runs, the two commands that need root:
+`loginctl enable-linger` to start at boot rather than at login, and a udev rule for reading
+NVMe health.
 
 ## What's in a release
 
-- `MachineHealth.exe`: the Windows app, one file.
-- `machinehealth-linux-x86_64`: the Linux app.
-- `manifest.json` and `manifest.json.sig`: the version and each file's SHA-256 and size,
-  signed with the release key.
-- A zip and a tar.gz for a manual install, each with a `.sha256`.
+| File | What it is |
+| --- | --- |
+| `machinehealth-setup.exe` | The Windows installer. |
+| `MachineHealth.exe` | The Windows app, one file. Installed copies update to it. |
+| `machinehealth-linux-x86_64` | The Linux app, one file. Installed copies update to it. |
+| `install-linux.sh` | The Linux install: the binary beside it and the systemd user unit. |
+| `manifest.json` | The version and the SHA-256 and size of the files above. |
+| `manifest.json.sig` | The release key's signature of `manifest.json`. |
+
+GitHub adds "Source code (zip)" and "Source code (tar.gz)" to every release and has no
+setting to remove them. They hold only this README: ignore them.
 
 ## Updates
 
 An installed MachineHealth updates itself from here. Before it replaces anything, it checks
 that `manifest.json` is signed by the release key compiled into it, that the version is
 newer, and that the downloaded file's SHA-256 and size match. Nothing that is not from a
-signed release is ever installed.
+signed release is ever installed. To check a download by hand, compare its SHA-256 with
+`manifest.json`.
 
 The source code is private; this repository holds only releases.
